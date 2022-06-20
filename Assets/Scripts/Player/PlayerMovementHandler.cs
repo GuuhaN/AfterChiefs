@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -13,29 +14,28 @@ namespace Player
         private Animator m_Animator;
         private Rigidbody2D m_Rigidbody2D;
         private SpriteRenderer m_SpriteRenderer;
-        private PlayerInputActions m_PlayerInputActions;
 
         private bool _spriteFlipped;
 
-        void Awake()
+        private Vector2 movementInput = Vector2.zero;
+
+        private void Awake()
         {
             m_Animator = GetComponent<Animator>();
             m_Rigidbody2D = GetComponent<Rigidbody2D>();
             m_SpriteRenderer = GetComponent<SpriteRenderer>();
-
-            m_PlayerInputActions = new PlayerInputActions();
-            m_PlayerInputActions.Enable();
-            m_PlayerInputActions.Player.Jump.performed += Jump;
         }
         
         void Update()
         {
+            IsGrounded();
             Movement();
             
             m_Animator.SetBool("Jump",!IsGrounded());
+            m_Animator.SetFloat("Movement", Mathf.Abs(m_Rigidbody2D.velocity.x));
         }
 
-        private void Jump(InputAction.CallbackContext context)
+        public void OnJump(InputAction.CallbackContext context)
         {
             if (IsGrounded() && context.performed)
             {
@@ -43,12 +43,14 @@ namespace Player
             }
         }
 
-        private void Movement()
+        public void OnMove(InputAction.CallbackContext context)
         {
-            var movementInput = m_PlayerInputActions.Player.Movement.ReadValue<Vector2>();
-            m_Rigidbody2D.velocity = new Vector2(movementInput.x * MovementSpeed, m_Rigidbody2D.velocity.y);
+            movementInput = context.ReadValue<Vector2>();
+        }
 
-            m_Animator.SetFloat("Movement", Mathf.Abs(m_Rigidbody2D.velocity.x));
+        public void Movement()
+        {
+            m_Rigidbody2D.velocity = new Vector2(movementInput.x * MovementSpeed, m_Rigidbody2D.velocity.y);
 
             if (movementInput.x < 0 && !_spriteFlipped)
                 _spriteFlipped = true;
